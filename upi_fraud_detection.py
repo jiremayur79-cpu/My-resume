@@ -24,37 +24,39 @@ print("\n[STEP 1] Creating Sample UPI Transaction Dataset...")
 np.random.seed(42)
 n_samples = 10000
 
-# Normal transactions
-normal_amount = np.random.uniform(100, 5000, n_samples)
-normal_time = np.random.uniform(0, 24, n_samples)
-normal_distance = np.random.uniform(0, 100, n_samples)
-normal_frequency = np.random.poisson(2, n_samples)
-
 # Create features
-data = {
-    'transaction_amount': normal_amount,
-    'time_of_day': normal_time,
-    'distance_from_home': normal_distance,
-    'transaction_frequency': normal_frequency,
-    'days_since_last_transaction': np.random.uniform(0, 30, n_samples),
-    'device_type': np.random.choice([0, 1, 2], n_samples),
-    'is_new_device': np.random.choice([0, 1], n_samples),
-    'is_international': np.random.choice([0, 1], n_samples)
-}
+transaction_amount = np.random.uniform(100, 5000, n_samples)
+time_of_day = np.random.uniform(0, 24, n_samples)
+distance_from_home = np.random.uniform(0, 100, n_samples)
+transaction_frequency = np.random.poisson(2, n_samples)
+days_since_last = np.random.uniform(0, 30, n_samples)
+device_type = np.random.choice([0, 1, 2], n_samples)
+is_new_device = np.random.choice([0, 1], n_samples)
+is_international = np.random.choice([0, 1], n_samples)
+
+# Create DataFrame
+df = pd.DataFrame({
+    'transaction_amount': transaction_amount,
+    'time_of_day': time_of_day,
+    'distance_from_home': distance_from_home,
+    'transaction_frequency': transaction_frequency,
+    'days_since_last_transaction': days_since_last,
+    'device_type': device_type,
+    'is_new_device': is_new_device,
+    'is_international': is_international
+})
 
 # Create fraud labels (80% normal, 20% fraud)
 fraud_label = np.random.choice([0, 1], n_samples, p=[0.8, 0.2])
-data['is_fraud'] = fraud_label
+df['is_fraud'] = fraud_label
 
 # Make fraudulent transactions have different patterns
-fraud_indices = np.where(fraud_label == 1)[0]
-data_array = np.array([data['transaction_amount'], data['time_of_day'], data['distance_from_home']])
-for idx in fraud_indices[:int(len(fraud_indices) * 0.5)]:
-    data['transaction_amount'][idx] *= 2
-    data['distance_from_home'][idx] *= 3
+fraud_indices = df[df['is_fraud'] == 1].index
+fraud_sample = fraud_indices[:int(len(fraud_indices) * 0.5)]
 
-# Create DataFrame
-df = pd.DataFrame(data)
+df.loc[fraud_sample, 'transaction_amount'] *= 2
+df.loc[fraud_sample, 'distance_from_home'] *= 3
+
 print(f"Dataset created: {len(df)} transactions")
 print(f"Fraud cases: {df['is_fraud'].sum()} ({df['is_fraud'].sum()/len(df)*100:.1f}%)")
 print(f"\nFirst 5 rows:\n{df.head()}")
@@ -148,8 +150,7 @@ df.boxplot(column='transaction_amount', by='is_fraud', ax=ax2)
 ax2.set_title('Transaction Amount: Normal vs Fraud', fontweight='bold')
 ax2.set_xlabel('Fraud Status (0=Normal, 1=Fraud)')
 ax2.set_ylabel('Amount (₹)')
-plt.sca(ax2)
-plt.xticks([1, 2], ['Normal', 'Fraud'])
+ax2.set_xticklabels(['Normal', 'Fraud'])
 
 # Plot 3: Confusion Matrix (Logistic Regression)
 ax3 = axes[1, 0]
@@ -186,7 +187,7 @@ ax4.grid(axis='y', alpha=0.3)
 plt.tight_layout()
 plt.savefig('upi_fraud_detection_analysis.png', dpi=300, bbox_inches='tight')
 print("✓ Visualization saved as 'upi_fraud_detection_analysis.png'")
-plt.close()
+plt.show()
 
 # STEP 7: FEATURE IMPORTANCE
 print("\n[STEP 7] Feature Importance (Random Forest)...")
@@ -205,7 +206,7 @@ plt.title('Feature Importance in UPI Fraud Detection', fontweight='bold', fontsi
 plt.tight_layout()
 plt.savefig('feature_importance.png', dpi=300, bbox_inches='tight')
 print("✓ Feature importance saved as 'feature_importance.png'")
-plt.close()
+plt.show()
 
 # SUMMARY
 print("\n" + "=" * 60)
